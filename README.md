@@ -62,8 +62,8 @@ Comparison of predicted values with collected patient values
 
 Future work may include:
 
-Using a larger real patient dataset  
-Comparing multiple regression models  
+Using a larger patient dataset  
+Comparing multiple models  
 Adding visualization and error analysis  
 Evaluating agreement with articulator settings or clinical records  
 Testing generalizability across different skeletal patterns  
