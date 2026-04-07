@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eminence Guidance Predictor</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --primary: #2E86AB;
+    --primary-dark: #1a6585;
+    --primary-light: #e8f4f8;
+    --success: #2d9e6b;
+    --dark: #1e2a38;
+    --mid: #4a5568;
+    --light: #f7fafc;
+    --border: #e2e8f0;
+    --shadow: 0 4px 24px rgba(46,134,171,0.10);
+    --shadow-lg: 0 8px 40px rgba(46,134,171,0.18);
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #e8f4f8 0%, #f0e8f4 100%);
+    min-height: 100vh;
+    color: var(--dark);
+    padding: 24px 16px 48px;
+  }
+
+  .container { max-width: 780px; margin: 0 auto; }
+
+  /* HEADER */
+  .header { text-align: center; margin-bottom: 32px; }
+  .header-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--primary); color: white;
+    padding: 6px 16px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; margin-bottom: 16px;
+  }
+  .header h1 {
+    font-size: clamp(24px, 5vw, 36px);
+    font-weight: 700; color: var(--dark);
+    line-height: 1.2; margin-bottom: 10px;
+  }
+  .header h1 span { color: var(--primary); }
+  .header p {
+    color: var(--mid); font-size: 15px; line-height: 1.6;
+    max-width: 540px; margin: 0 auto;
+  }
+
+  /* CARD */
+  .card {
+    background: white;
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .card-title {
+    font-size: 13px; font-weight: 600; color: var(--primary);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+  }
+  .card-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* FORM GRID */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  @media (max-width: 540px) { .form-grid { grid-template-columns: 1fr; } }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label {
+    font-size: 13px; font-weight: 500; color: var(--mid);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .field label .unit {
+    font-size: 11px; font-weight: 400;
+    background: var(--primary-light); color: var(--primary);
+    padding: 2px 7px; border-radius: 8px;
+  }
+  .field input, .field select {
+    padding: 11px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 15px; font-family: 'Inter', sans-serif;
+    color: var(--dark);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: var(--light);
+    width: 100%;
+  }
+  .field input:focus, .field select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(46,134,171,0.12);
+    background: white;
+  }
+  .field input.warn { border-color: #e6a817; }
+  .field .hint {
+    font-size: 11px; color: #a0aec0;
+    display: flex; justify-content: space-between;
+  }
+  .field .warn-msg { font-size: 11px; color: #b7791f; display: none; }
+  .field input.warn ~ .hint .warn-msg { display: block; }
+
+  select {
+    cursor: pointer; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a5568' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+    padding-right: 36px;
+  }
+
+  .section-divider {
+    display: flex; align-items: center; gap: 10px;
+    margin: 6px 0 18px;
+    font-size: 12px; font-weight: 600; color: var(--mid);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .section-divider::before, .section-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* BUTTON */
+  .predict-btn {
+    width: 100%; margin-top: 24px;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white; font-size: 16px; font-weight: 600;
+    border: none; border-radius: 12px; cursor: pointer;
+    letter-spacing: 0.03em;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 16px rgba(46,134,171,0.30);
+  }
+  .predict-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(46,134,171,0.40);
+  }
+  .predict-btn:active { transform: translateY(0); }
+
+  /* RESULT */
+  .result-card {
+    background: linear-gradient(135deg, var(--primary) 0%, #1a5f80 100%);
+    border-radius: 20px; padding: 32px;
+    color: white; text-align: center;
+    display: none; margin-bottom: 20px;
+    box-shadow: var(--shadow-lg);
+    animation: slideIn 0.4s ease;
+  }
+  .result-card.show { display: block; }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .result-label {
+    font-size: 13px; font-weight: 600; opacity: 0.75;
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;
+  }
+  .result-value {
+    font-size: clamp(48px, 10vw, 72px);
+    font-weight: 700; line-height: 1; margin-bottom: 4px;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+  .result-unit { font-size: 20px; font-weight: 400; opacity: 0.8; }
+  .result-sublabel { font-size: 13px; opacity: 0.7; margin-top: 6px; margin-bottom: 24px; }
+  .result-bars { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .result-bar-item {
+    background: rgba(255,255,255,0.15); border-radius: 12px;
+    padding: 12px 18px; min-width: 110px;
+  }
+  .result-bar-item .bar-label { font-size: 11px; opacity: 0.7; margin-bottom: 4px; }
+  .result-bar-item .bar-value { font-size: 18px; font-weight: 600; }
+  .interp-tag {
+    display: inline-block; margin-top: 20px;
+    background: rgba(255,255,255,0.2); border-radius: 20px;
+    padding: 8px 18px; font-size: 13px; font-weight: 500;
+  }
+  .reset-btn {
+    margin-top: 20px; padding: 10px 28px;
+    background: rgba(255,255,255,0.2);
+    border: 1.5px solid rgba(255,255,255,0.4);
+    color: white; border-radius: 8px; cursor: pointer;
+    font-size: 13px; font-family: 'Inter', sans-serif;
+    transition: background 0.2s;
+  }
+  .reset-btn:hover { background: rgba(255,255,255,0.3); }
+
+  /* ABOUT */
+  details { margin-bottom: 20px; }
+  summary {
+    cursor: pointer; list-style: none;
+    background: white; border-radius: 16px; padding: 16px 24px;
+    font-weight: 600; font-size: 14px; color: var(--mid);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: var(--shadow);
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '▾'; font-size: 16px; color: var(--primary); transition: transform 0.2s; }
+  details[open] summary::after { transform: rotate(180deg); }
+  .about-body {
+    background: white; border: 1px solid var(--border);
+    border-top: none; border-radius: 0 0 16px 16px;
+    padding: 20px 24px; margin-top: -4px;
+  }
+  .about-body p { font-size: 13.5px; color: var(--mid); line-height: 1.7; margin-bottom: 10px; }
+  .about-body p:last-child { margin-bottom: 0; }
+  .metric-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 14px 0; }
+  .metric-chip {
+    background: var(--primary-light); color: var(--primary);
+    border-radius: 8px; padding: 8px 14px;
+    font-size: 13px; font-weight: 500;
+  }
+  .metric-chip span { font-weight: 700; }
+
+  .disclaimer {
+    text-align: center; font-size: 12px; color: #a0aec0; line-height: 1.6; padding: 0 16px;
+  }
+  .disclaimer a { color: var(--primary); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-badge">Clinical Research Tool</div>
+    <h1>Eminence Guidance<br><span>Inclination Predictor</span></h1>
+    <p>Enter cephalometric and panoramic measurements to predict the Mean Articular Eminence Inclination for sagittal condylar guidance programming.</p>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result-card" id="resultCard">
+    <div class="result-label">Predicted Mean AEI</div>
+    <div class="result-value" id="resultValue">—</div>
+    <div class="result-unit">degrees</div>
+    <div class="result-sublabel">Model accuracy: ± 3.15° MAE</div>
+    <div class="result-bars">
+      <div class="result-bar-item">
+        <div class="bar-label">Population Mean</div>
+        <div class="bar-value">22.9°</div>
+      </div>
+      <div class="result-bar-item">
+        <div class="bar-label">Your Prediction</div>
+        <div class="bar-value" id="resultBar">—</div>
+      </div>
+      <div class="result-bar-item">
+        <div class="bar-label">Clinical Range</div>
+        <div class="bar-value">14° – 34°</div>
+      </div>
+    </div>
+    <div class="interp-tag" id="interpTag"></div>
+    <br>
+    <button class="reset-btn" onclick="resetForm()">New Patient ↺</button>
+  </div>
+
+  <!-- INPUT -->
+  <div class="card" id="inputCard">
+    <div class="card-title">Patient Measurements</div>
+    <div class="form-grid">
+
+      <div class="field full">
+        <label>Sex</label>
+        <select id="Sex">
+          <option value="0">Female</option>
+          <option value="1">Male</option>
+        </select>
+      </div>
+
+      <div class="section-divider full">Cephalometric</div>
+
+      <div class="field">
+        <label>SN-GoGn <span class="unit">degrees</span></label>
+        <input type="number" id="SN_GoGn" placeholder="25.0" step="0.1">
+        <div class="hint">
+          <span>Typical: 15 – 38°</span>
+          <span class="warn-msg">⚠ Outside training range</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Occlusal Plane Angle <span class="unit">degrees</span></label>
+        <input type="number" id="Occ_Plane" placeholder="12.0" step="0.1">
+        <div class="hint">
+          <span>Typical: 6 – 19°</span>
+          <span class="warn-msg">⚠ Outside training range</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>ANB Angle <span class="unit">degrees</span></label>
+        <input type="number" id="ANB" placeholder="2.0" step="0.1">
+        <div class="hint">
+          <span>Typical: −1 – 5°</span>
+          <span class="warn-msg">⚠ Outside training range</span>
+        </div>
+      </div>
+
+      <div class="section-divider full">Panoramic</div>
+
+      <div class="field">
+        <label>Ramus Height <span class="unit">mm</span></label>
+        <input type="number" id="Ramus_Ht" placeholder="62.0" step="0.1">
+        <div class="hint">
+          <span>Typical: 50 – 72 mm</span>
+          <span class="warn-msg">⚠ Outside training range</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Condylar Height <span class="unit">mm</span></label>
+        <input type="number" id="Cond_Ht" placeholder="12.5" step="0.1">
+        <div class="hint">
+          <span>Typical: 8 – 17 mm</span>
+          <span class="warn-msg">⚠ Outside training range</span>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Bigonial Width <span class="unit">mm</span></label>
+        <input type="number" id="Bigonial" placeholder="184.0" step="0.1">
+        <div class="hint">
+          <span>Typical: 155 – 214 mm</span>
+          <span class="warn-msg">⚠ Outside training range</span>
+        </div>
+      </div>
+
+    </div>
+    <button class="predict-btn" onclick="runPrediction()">Predict Eminence Inclination →</button>
+  </div>
+
+  <!-- ABOUT -->
+  <details>
+    <summary>About this model</summary>
+    <div class="about-body">
+      <p>This tool uses a <strong>Ridge Regression model</strong> trained on a dataset of 100 patients (19 real clinical cases + 81 realistic synthetics) to predict the <strong>Mean Articular Eminence Inclination (AEI)</strong> from routine radiographic measurements.</p>
+      <div class="metric-row">
+        <div class="metric-chip">MAE: <span>3.15°</span></div>
+        <div class="metric-chip">RMSE: <span>3.96°</span></div>
+        <div class="metric-chip">R²: <span>0.33</span></div>
+        <div class="metric-chip">n: <span>100 patients</span></div>
+      </div>
+      <p>An R² of 0.33 is consistent with published literature (Katsavrias 2002; Pullinger &amp; Hollender 2002), which reports R²=0.15–0.35 for predicting eminence inclination from cephalometrics. Approximately 70% of AEI variance is explained by factors not captured in radiographic measurements (disc morphology, genetics, functional loading).</p>
+      <p><strong>Top predictors:</strong> Ramus Height (+), ANB (+), Sex — Male (+), SN-GoGn (−). A higher AEI indicates a steeper eminence requiring a higher condylar guidance setting on the articulator.</p>
+    </div>
+  </details>
+
+  <p class="disclaimer">
+    For research and educational use only. Not validated for clinical decision-making.<br>
+    Predictions carry ±3.15° mean error. Always correlate with clinical findings.<br>
+    <a href="https://github.com/shuvammitra1999/eminence_guidance_prediction" target="_blank">View source &amp; methodology →</a>
+  </p>
+
+</div>
+
+<script>
+const MODEL = {
+  intercept: 23.125,
+  features:  ["Sex","SN_GoGn","Occ_Plane","Ramus_Ht","Cond_Ht","Bigonial","ANB"],
+  coef:      [ 0.8321289316937213, -0.8717391707120852, -0.3073464767411064,
+                1.1807580944633977,  0.7390984491819635, -0.7166291667669724,
+                1.0029732942395957],
+  mean:      [0.2875, 24.862, 11.995, 62.016, 12.505, 184.379, 1.9875],
+  std:       [0.4526,  5.4547,  3.1554,  4.3566,  1.9444, 11.214,  1.3186]
+};
+
+const RANGES = {
+  SN_GoGn:  [14.6, 38.4],
+  Occ_Plane:[5.9,  19.1],
+  Ramus_Ht: [50.1, 71.9],
+  Cond_Ht:  [7.9,  16.7],
+  Bigonial: [155,  214.2],
+  ANB:      [-1.0,  4.6]
+};
+
+function predict(inputs) {
+  let result = MODEL.intercept;
+  for (let i = 0; i < MODEL.features.length; i++) {
+    result += MODEL.coef[i] * (inputs[i] - MODEL.mean[i]) / MODEL.std[i];
+  }
+  return result;
+}
+
+function interpret(aei) {
+  if (aei < 18) return "Flat eminence — low condylar guidance";
+  if (aei < 22) return "Moderate eminence — standard condylar guidance";
+  if (aei < 27) return "Average-steep eminence — elevated guidance";
+  return "Steep eminence — high condylar guidance";
+}
+
+function runPrediction() {
+  const inputs = [];
+  let allFilled = true;
+
+  for (const id of MODEL.features) {
+    const el = document.getElementById(id);
+    const val = parseFloat(el.value);
+    if (isNaN(val)) {
+      el.style.borderColor = '#e53e3e';
+      allFilled = false;
+    } else {
+      el.style.borderColor = '';
+      inputs.push(val);
+      if (RANGES[id]) {
+        const [lo, hi] = RANGES[id];
+        (val < lo || val > hi) ? el.classList.add('warn') : el.classList.remove('warn');
+      }
+    }
+  }
+
+  if (!allFilled) {
+    const btn = document.querySelector('.predict-btn');
+    btn.textContent = 'Please fill in all fields';
+    setTimeout(() => btn.textContent = 'Predict Eminence Inclination →', 2000);
+    return;
+  }
+
+  const pred = predict(inputs);
+  const rounded = pred.toFixed(1);
+  document.getElementById('resultValue').textContent = rounded;
+  document.getElementById('resultBar').textContent = rounded + '°';
+  document.getElementById('interpTag').textContent = interpret(pred);
+  document.getElementById('resultCard').classList.add('show');
+  document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function resetForm() {
+  document.getElementById('resultCard').classList.remove('show');
+  MODEL.features.forEach(id => {
+    const el = document.getElementById(id);
+    if (el.tagName !== 'SELECT') el.value = '';
+    el.style.borderColor = '';
+    el.classList.remove('warn');
+  });
+  document.querySelector('.predict-btn').textContent = 'Predict Eminence Inclination →';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
