@@ -13,19 +13,13 @@ RESULTS_DIR = os.path.join(PROJECT_ROOT, "results")
 # Target variable
 TARGET_COL = "Mean_AEI"
 
-# Feature sets
+# Feature sets — testing ANB contribution
 FEATURE_SETS = {
-    "base_anb": [
-        "Age", "Sex", "ANB", "SN_GoGn", "Occ_Plane",
-        "Ramus_Ht", "Cond_Ht", "Bigonial",
+    "with_ANB": [
+        "Sex", "SN_GoGn", "Occ_Plane", "Ramus_Ht", "Cond_Ht", "Bigonial", "ANB",
     ],
-    "base_snb": [
-        "Age", "Sex", "SNB", "SN_GoGn", "Occ_Plane",
-        "Ramus_Ht", "Cond_Ht", "Bigonial",
-    ],
-    "full_regularized": [
-        "Age", "Sex", "SNA", "SNB", "ANB", "SN_GoGn", "Occ_Plane",
-        "Ramus_Ht", "Cond_Ht", "Bigonial",
+    "without_ANB": [
+        "Sex", "SN_GoGn", "Occ_Plane", "Ramus_Ht", "Cond_Ht", "Bigonial",
     ],
 }
 

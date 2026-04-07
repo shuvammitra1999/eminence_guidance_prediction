@@ -9,10 +9,10 @@ from sklearn.model_selection import train_test_split
 from config import REAL_DATA_PATH, SYNTHETIC_DATA_PATH, TARGET_COL, TEST_SIZE, RANDOM_STATE
 
 
-# Standardized column names used throughout the pipeline
-STANDARD_COLS = [
-    "Age", "Sex", "SNA", "SNB", "ANB", "SN_GoGn", "Occ_Plane",
-    "Ramus_Ht", "Cond_Ht", "Bigonial", "Right_AEI", "Left_AEI", "Mean_AEI",
+# Columns shared between real and synthetic data (used for merging)
+MERGE_COLS = [
+    "Sex", "SN_GoGn", "Occ_Plane", "Ramus_Ht", "Cond_Ht",
+    "Bigonial", "ANB", "Right_AEI", "Left_AEI", "Mean_AEI",
 ]
 
 
@@ -49,7 +49,7 @@ def load_real_data(path: str = REAL_DATA_PATH) -> pd.DataFrame:
 def load_synthetic_data(path: str = SYNTHETIC_DATA_PATH) -> pd.DataFrame:
     """Load the 81 synthetic patients."""
     df = pd.read_csv(path)
-    df = df[STANDARD_COLS].copy()
+    df = df[MERGE_COLS].copy()
     df["Source"] = "synthetic"
     return df
 
@@ -58,7 +58,9 @@ def load_merged_dataset() -> pd.DataFrame:
     """Load and merge real + synthetic into a single 100-patient dataset."""
     df_real = load_real_data()
     df_synth = load_synthetic_data()
-    df = pd.concat([df_real, df_synth], ignore_index=True)
+    # Only keep columns present in both datasets for the merge
+    df_real_trimmed = df_real[MERGE_COLS + ["Source"]].copy()
+    df = pd.concat([df_real_trimmed, df_synth], ignore_index=True)
     return df
 
 
@@ -72,7 +74,7 @@ def get_train_test_split(df: pd.DataFrame = None):
     if df is None:
         df = load_merged_dataset()
 
-    feature_cols = [c for c in STANDARD_COLS if c not in [TARGET_COL, "Right_AEI", "Left_AEI"]]
+    feature_cols = [c for c in MERGE_COLS if c not in [TARGET_COL, "Right_AEI", "Left_AEI"]]
     X = df[feature_cols]
     y = df[TARGET_COL]
 
@@ -93,19 +95,8 @@ def print_data_audit(df: pd.DataFrame) -> None:
     print(f"  Synthetic: {(df['Source'] == 'synthetic').sum()}")
     print(f"\nSex distribution: {df['Sex'].value_counts().to_dict()} (0=F, 1=M)")
 
-    # ANB consistency
-    anb_diff = (df["SNA"] - df["SNB"] - df["ANB"]).abs()
-    if anb_diff.max() > 0.2:
-        print(f"\nWARNING: ANB inconsistency found (max dev: {anb_diff.max():.2f})")
-        bad = df[anb_diff > 0.2]
-        for _, row in bad.iterrows():
-            print(f"  {row['Source']}: SNA={row['SNA']}, SNB={row['SNB']}, "
-                  f"ANB={row['ANB']}, expected={row['SNA'] - row['SNB']:.1f}")
-    else:
-        print(f"\nANB consistency: OK (max deviation: {anb_diff.max():.2f})")
-
     print(f"\nDescriptive statistics:")
-    cols = [c for c in STANDARD_COLS if c != "Right_AEI" and c != "Left_AEI"]
+    cols = [c for c in MERGE_COLS if c != "Right_AEI" and c != "Left_AEI"]
     print(df[cols].describe().round(2).to_string())
 
 
